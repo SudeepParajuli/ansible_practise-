@@ -1,0 +1,60 @@
+---
+- name: ansible practise
+  hosts: web 
+  remote_user: vagrant 
+  become: yes 
+  vars:
+    - name: declaring some variable 
+      src: /home/vagrant/src 
+      dest: /home/vagrant/dest
+  vars_files: 
+    - var1.yml
+    - var2.yml 
+  tasks:
+    - name: Installing nginx on the server 
+      apt: name=nginx state=present 
+    - name: creating a new directory 
+      file: path= {{ src }} state=directory 
+    - name: creating a new file 
+      file: path={{ dest }} state=touch 
+    - name: copying a file to the new location 
+      copy: src={{ src }} dest: {{ dest }} owner=vagrant mode=0777
+    - name: demonstrate the use of template 
+      template: src= {{ src  }} dest= {{ dest }}
+    - name: install many items together 
+      apt: name= "{{ items }}" update_cache=yes cache_valid_time=3600 
+      sudo: True 
+      with_items: 
+        - git 
+        - vim 
+        - nano 
+        - cowsay 
+    - name: download chruby from source 
+      get_url: 
+        url: "xyz"
+        dest: "test"
+        sha256sum: 
+        force: 
+    - name: extract the code 
+      unarchive: 
+      src: "xyz"
+      dest: 
+      copy: no 
+      register: test 
+    - name: make install chruby 
+      shell: make install chdir="/home/vagrant/{{src}}"
+      when: test|changed 
+    - name: enable the nginx site 
+      file: 
+        state: link 
+        src: {{ src }}
+        path: /home/vagrant/keys 
+    - name: add an apt_key 
+      apt_key: keyserver=keyserver.ubuntu.com id=366AD21E9
+    - name: add specified repository 
+      apt_repository: repo='deb http://archive.canonical.com/' state=present   
+  handler: 
+    - name: restart nginx 
+      service: name=nginx state=restarted 
+    
+
